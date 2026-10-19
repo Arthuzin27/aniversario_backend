@@ -15,3 +15,4 @@ scripts
 *.md
 docker-compose*.yml
 compose*.yaml
+nginx

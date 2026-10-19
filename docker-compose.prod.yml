@@ -1,9 +1,7 @@
 # Ambiente de PRODUÇÃO na VPS. Execute dentro desta pasta (backend/), com o .env aqui:
 #   sudo docker compose -f docker-compose.prod.yml up -d --build
 #
-# Estrutura esperada na VPS (os dois repositórios lado a lado):
-#   ~/convite/backend   ← este repositório (compose + .env)
-#   ~/convite/frontend  ← repositório do frontend (Dockerfile do Nginx + build do React)
+# O site (React) fica na Vercel. Aqui sobem o banco, a API e o Nginx (HTTPS na 3041, proxy da API).
 #
 # Nomes de projeto, containers, rede e volume são exclusivos ("convite"), para não colidir com outros
 # sistemas da VPS. Postgres e backend ficam presos em 127.0.0.1; só o Nginx (HTTPS) é público.
@@ -60,17 +58,7 @@ services:
 
   nginx:
     build:
-      context: ../frontend
-      args:
-        VITE_FESTA_ANIVERSARIANTE: ${VITE_FESTA_ANIVERSARIANTE:-}
-        VITE_FESTA_DATA: ${VITE_FESTA_DATA:-}
-        VITE_FESTA_HORARIO: ${VITE_FESTA_HORARIO:-}
-        VITE_FESTA_LOCAL: ${VITE_FESTA_LOCAL:-}
-        VITE_FESTA_ENDERECO: ${VITE_FESTA_ENDERECO:-}
-        VITE_FESTA_MAPA_URL: ${VITE_FESTA_MAPA_URL:-}
-        VITE_FESTA_TRAJE: ${VITE_FESTA_TRAJE:-}
-        VITE_FESTA_PRAZO_CONFIRMACAO: ${VITE_FESTA_PRAZO_CONFIRMACAO:-}
-        VITE_FESTA_MENSAGEM: ${VITE_FESTA_MENSAGEM:-}
+      context: ./nginx
     image: convite-nginx:latest
     container_name: convite-nginx
     restart: unless-stopped
@@ -82,7 +70,7 @@ services:
     volumes:
       # Certificado Let's Encrypt já existente na VPS (renovado fora deste projeto)
       - /home/admin/backend-estoque360/nginx/certbot/conf:/etc/letsencrypt:ro
-    mem_limit: 128m
+    mem_limit: 64m
     networks: [convite-net]
     logging: *logging
 

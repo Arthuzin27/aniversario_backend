@@ -41,6 +41,7 @@ Testes: JUnit 5, Mockito, MockMvc e Testcontainers (PostgreSQL real). Infra: Doc
 ├── scripts/             backup.sh e restore.sh do banco
 ├── compose.yaml         Ambiente local (PostgreSQL + API)
 ├── docker-compose.prod.yml  Produção na VPS (PostgreSQL + API + Nginx) — veja DEPLOY.md
+├── nginx/               Nginx de produção (HTTPS na 3041, proxy da API)
 ├── Dockerfile
 ├── .env.example         Modelo das variáveis de produção
 ├── .env.dev.example     Modelo das variáveis de desenvolvimento
@@ -200,7 +201,7 @@ A correção é feita pelo painel (editar/excluir).
 ## Deploy na VPS
 
 Passo a passo completo em [DEPLOY.md](DEPLOY.md): `docker-compose.prod.yml` com PostgreSQL, API e Nginx
-(frontend + HTTPS) em https://brenonun3s.vps-kinghost.net:3041, perfil Spring `prod` e variáveis em `.env.example`.
+(HTTPS) com a API em https://brenonun3s.vps-kinghost.net:3041 e o site na Vercel, perfil Spring `prod` e variáveis em `.env.example`.
 
 ## Backup e recuperação
 
