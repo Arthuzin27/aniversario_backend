@@ -1,0 +1,17 @@
+target
+.git
+.gitignore
+.idea
+.vscode
+*.iml
+.env
+.env.*
+!.env.example
+node_modules
+backups
+.local-test
+scripts
+*.log
+*.md
+docker-compose*.yml
+compose*.yaml

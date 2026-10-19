@@ -1,0 +1,96 @@
+# Ambiente de PRODUÇÃO na VPS. Execute dentro desta pasta (backend/), com o .env aqui:
+#   sudo docker compose -f docker-compose.prod.yml up -d --build
+#
+# Estrutura esperada na VPS (os dois repositórios lado a lado):
+#   ~/convite/backend   ← este repositório (compose + .env)
+#   ~/convite/frontend  ← repositório do frontend (Dockerfile do Nginx + build do React)
+#
+# Nomes de projeto, containers, rede e volume são exclusivos ("convite"), para não colidir com outros
+# sistemas da VPS. Postgres e backend ficam presos em 127.0.0.1; só o Nginx (HTTPS) é público.
+name: convite
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: convite-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:?Defina DB_NAME no .env}
+      POSTGRES_USER: ${DB_USERNAME:?Defina DB_USERNAME no .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+      TZ: America/Sao_Paulo
+    volumes:
+      - convite_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:2334:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [convite-net]
+    logging: *logging
+
+  backend:
+    build:
+      context: .
+    image: convite-backend:latest
+    container_name: convite-backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME}
+      TZ: America/Sao_Paulo
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:1556:8080"
+    # A JVM usa até 75% deste limite (-XX:MaxRAMPercentage=75.0 no Dockerfile)
+    mem_limit: 512m
+    networks: [convite-net]
+    logging: *logging
+
+  nginx:
+    build:
+      context: ../frontend
+      args:
+        VITE_FESTA_ANIVERSARIANTE: ${VITE_FESTA_ANIVERSARIANTE:-}
+        VITE_FESTA_DATA: ${VITE_FESTA_DATA:-}
+        VITE_FESTA_HORARIO: ${VITE_FESTA_HORARIO:-}
+        VITE_FESTA_LOCAL: ${VITE_FESTA_LOCAL:-}
+        VITE_FESTA_ENDERECO: ${VITE_FESTA_ENDERECO:-}
+        VITE_FESTA_MAPA_URL: ${VITE_FESTA_MAPA_URL:-}
+        VITE_FESTA_TRAJE: ${VITE_FESTA_TRAJE:-}
+        VITE_FESTA_PRAZO_CONFIRMACAO: ${VITE_FESTA_PRAZO_CONFIRMACAO:-}
+        VITE_FESTA_MENSAGEM: ${VITE_FESTA_MENSAGEM:-}
+    image: convite-nginx:latest
+    container_name: convite-nginx
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3041:443"
+    volumes:
+      # Certificado Let's Encrypt já existente na VPS (renovado fora deste projeto)
+      - /home/admin/backend-estoque360/nginx/certbot/conf:/etc/letsencrypt:ro
+    mem_limit: 128m
+    networks: [convite-net]
+    logging: *logging
+
+volumes:
+  convite_postgres_data:
+    name: convite_postgres_data
+
+networks:
+  convite-net:
+    name: convite-net
+    driver: bridge

@@ -1,0 +1,50 @@
+# Ambiente LOCAL de desenvolvimento (execute nesta pasta).
+#   Somente o banco:   docker compose up -d db
+#   Banco + API:       docker compose up -d --build
+# As portas ficam ligadas a 127.0.0.1 e não são acessíveis por outras máquinas.
+# Produção: veja docker-compose.prod.yml.
+name: convite15
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-convite}
+      POSTGRES_USER: ${POSTGRES_USER:-convite}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [interna]
+
+  backend:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-convite}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 6
+    networks: [interna]
+
+volumes:
+  pgdata:
+
+networks:
+  interna:

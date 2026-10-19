@@ -1,0 +1,15 @@
+# Override SOMENTE para testar o compose de produção na máquina local (nunca usar na VPS).
+# Troca o certificado real por um autoassinado e o .env pelo de teste, ambos em .local-test/ (fora do git).
+#
+#   docker compose --env-file .local-test/.env -f docker-compose.prod.yml -f docker-compose.local-test.yml up -d --build
+#   docker compose --env-file .local-test/.env -f docker-compose.prod.yml -f docker-compose.local-test.yml down
+#
+# Para gerar o certificado de teste, veja a seção "Teste local" do DEPLOY.md.
+services:
+  backend:
+    env_file: !override
+      - .local-test/.env
+
+  nginx:
+    volumes: !override
+      - ./.local-test/certbot/conf:/etc/letsencrypt:ro

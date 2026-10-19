@@ -1,0 +1,32 @@
+# Segredos (use .env.example / .env.dev.example como modelo)
+.env
+.env.*
+!.env.example
+!.env.dev.example
+
+# Teste local do compose de produção (certificado autoassinado, .env de teste)
+.local-test/
+*.pem
+
+# Build e backups
+target/
+backups/
+*.log
+
+### IDEs ###
+.idea
+*.iws
+*.iml
+*.ipr
+.vscode/
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+.DS_Store
+Thumbs.db
